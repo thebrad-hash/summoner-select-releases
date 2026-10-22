@@ -22,6 +22,26 @@ You can [read the script](install.ps1) before running it.
 
 **If you'd rather click:** download `SummonerSelect-…-setup.exe` from the [latest release](https://github.com/thebrad-hash/summoner-select-releases/releases/latest) and run it. Because the build is new and unsigned, Windows will show "Windows protected your PC": choose **More info → Run anyway**.
 
+## Verify this build
+
+From v0.9.2 on, every installer here is built by [GitHub Actions](.github/workflows/release.yml) on GitHub's own Windows machines from a tagged version of the private source, never on a developer's PC. GitHub signs a record of each build (a build provenance attestation) and locks each release, so its files can't be swapped afterwards.
+
+To check a download yourself, install the [GitHub CLI](https://cli.github.com) (2.81 or newer), sign in once with `gh auth login`, and run these in the folder that holds the installer. Replace `0.9.2` with your version.
+
+```powershell
+gh attestation verify SummonerSelect-0.9.2-setup.exe --repo thebrad-hash/summoner-select-releases --signer-workflow thebrad-hash/summoner-select-releases/.github/workflows/release.yml --source-ref refs/heads/main --deny-self-hosted-runners
+gh release verify v0.9.2 --repo thebrad-hash/summoner-select-releases
+gh release verify-asset v0.9.2 SummonerSelect-0.9.2-setup.exe --repo thebrad-hash/summoner-select-releases
+```
+
+1. The first checks the build provenance: this exact file came from this repository's release workflow, running on a GitHub-hosted runner.
+2. The second checks that the release is immutable: its files and tag can't change.
+3. The third checks that your file is byte-for-byte the one in that release.
+
+Each release's notes link to its build log and name the source commit it was built from. Without the GitHub CLI you can still compare checksums: `Get-FileHash .\SummonerSelect-0.9.2-setup.exe` should print the SHA-256 shown on the release page. The install command does this for you.
+
+v0.9.0 and v0.9.1 were built before this was set up, so they can't be checked this way.
+
 ## First run
 
 1. **Allow network access.** Windows asks once whether the app may use your network. The prompt may say "Node.js JavaScript Runtime". Allow it on **private networks**, or your phone can't connect.
