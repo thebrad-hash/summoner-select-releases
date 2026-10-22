@@ -27,6 +27,7 @@ You can [read the script](install.ps1) before running it.
 1. **Allow network access.** Windows asks once whether the app may use your network. The prompt may say "Node.js JavaScript Runtime". Allow it on **private networks**, or your phone can't connect.
 2. **Pair your phone.** Summoner Select shows a pairing QR code. Scan it with a phone on the same Wi-Fi.
 3. **Play as usual.** Start League; the app follows your lobby and champ select.
+4. **Voice control (optional).** Tap the mic on your phone. The first time, the app shows how to let the phone trust your PC (Settings → Voice), once per phone. The certificate it trusts is made on your PC and never leaves it.
 
 On Windows 11 PCs with **Smart App Control** turned on, unsigned apps are blocked outright. Signed builds come later.
 
