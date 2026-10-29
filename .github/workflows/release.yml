@@ -147,7 +147,9 @@ jobs:
           $dir = Join-Path $env:RUNNER_TEMP 'installed'
           $install = Start-Process -FilePath (Resolve-Path $env:SETUP).Path -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=`"$dir`"" -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "The installer exited with code $($install.ExitCode)." }
-          foreach ($file in 'Summoner Select.exe', 'unins000.exe', 'runtime\node.exe', 'app\src\server.js', 'app\vendor\braddraft\public\engine\index.js', 'app\vendor\braddraft\public\data\bundle.json') {
+          # the draft engine's folder: vendor\draft, or vendor\braddraft in tags before its rename (v0.9.3 and older)
+          $engine = if (Test-Path (Join-Path $dir 'app\vendor\draft')) { 'app\vendor\draft' } else { 'app\vendor\braddraft' }
+          foreach ($file in 'Summoner Select.exe', 'unins000.exe', 'runtime\node.exe', 'app\src\server.js', "$engine\public\engine\index.js", "$engine\public\data\bundle.json") {
             if (-not (Test-Path (Join-Path $dir $file))) { throw "The install has no $file." }
           }
           # run the installed app in demo mode, as its launcher would, and ask it about itself
