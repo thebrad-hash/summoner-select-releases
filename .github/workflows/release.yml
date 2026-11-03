@@ -6,7 +6,9 @@
 # with "Publish" unticked (build and check only), then ticked.
 #
 # Needs the repository secret CODE_REPO_TOKEN: a fine-grained personal access
-# token for thebrad-hash/summoner-select only, with read-only Contents access.
+# token for the code repository (CODE_REPO below) only, with read-only Contents
+# access. From v0.10.0 the code is Summoner Select V2 (thebrad-hash/summoner-select-v2);
+# v0.9.10 and older were built from thebrad-hash/summoner-select.
 # Anyone can check a published build: see "Verify this build" in README.md.
 
 name: Release
@@ -35,7 +37,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  CODE_REPO: thebrad-hash/summoner-select
+  CODE_REPO: thebrad-hash/summoner-select-v2
   NODE_VERSION: 24.22.1
 
 jobs:
