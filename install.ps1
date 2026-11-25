@@ -10,6 +10,10 @@
 #   4. installs Summoner Select for the current Windows user only (no admin prompt)
 #   5. starts it
 #
+# If Windows stops the installer or the app, it says so and points to https://summonerselect.com/blocked
+# (the builds aren't signed yet, and Smart App Control can block unsigned apps). It only reads whether
+# Smart App Control is on, after something failed. It changes no Windows setting.
+#
 # To download and check without installing, first run:
 #   $env:SUMMONER_SELECT_DOWNLOAD_ONLY = '1'
 
@@ -20,6 +24,35 @@
 
   $repo = 'thebrad-hash/summoner-select-releases'
   $headers = @{ 'User-Agent' = 'summoner-select-installer'; 'Accept' = 'application/vnd.github+json' }
+  $helpPage = 'https://summonerselect.com/blocked'
+
+  # Called only after the installer or the app failed. Smart App Control's state is 1 when it is on; no value there,
+  # or any error reading it, means we don't know. Returns true if it explained the failure, false if it only added
+  # the help address (the caller then shows the error itself). Reword this once the builds are signed.
+  function Show-BlockedHelp($Headline, $What, $Details) {
+    $state = $null
+    try {
+      $policy = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy' -Name 'VerifiedAndReputablePolicyState' -ErrorAction Stop
+      $state = $policy.VerifiedAndReputablePolicyState
+    } catch { }
+
+    Write-Host ''
+    if ($state -ne 1) {
+      Write-Host "  If Windows blocked $What, see $helpPage"
+      Write-Host ''
+      return $false
+    }
+    Write-Host "  $Headline" -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host "  Smart App Control is on for this PC. It can block apps that aren't signed,"
+    Write-Host "  and Summoner Select's builds aren't signed yet. You can wait for the signed"
+    Write-Host '  build, or turn Smart App Control off yourself. This page explains both:'
+    Write-Host "  $helpPage"
+    Write-Host ''
+    Write-Host "  Details: $Details"
+    Write-Host ''
+    return $true
+  }
 
   Write-Host ''
   Write-Host '  Summoner Select - test build' -ForegroundColor Yellow
@@ -43,7 +76,7 @@
   $expected = if ($line) { ($line -split '\s+')[0].ToUpperInvariant() } else { '' }
   $actual = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToUpperInvariant()
   if (-not $expected -or $expected -ne $actual) {
-    Remove-Item -Path $file -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path $file, $sumsFile -Force -ErrorAction SilentlyContinue
     throw 'Checksum mismatch: this download is not the published installer. Nothing was installed.'
   }
   Write-Host '  Checksum matches the release.' -ForegroundColor Green
@@ -55,13 +88,30 @@
   }
 
   Write-Host '  Installing for this Windows user...'
-  $proc = Start-Process -FilePath $file -ArgumentList '/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -Wait -PassThru
-  Remove-Item -Path $file, $sumsFile -Force -ErrorAction SilentlyContinue
-  if ($proc.ExitCode -ne 0) { throw "The installer stopped with exit code $($proc.ExitCode)." }
+  $headline = 'Nothing was installed: Windows most likely blocked the installer.'
+  try {
+    $proc = Start-Process -FilePath $file -ArgumentList '/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -Wait -PassThru
+    if ($proc.ExitCode -ne 0) {
+      # 1 is the installer failing before its own program ran, as when Windows blocks that program. Other codes come
+      # from that program itself (someone pressed Cancel, a file was in use), so a block is less likely.
+      if ($proc.ExitCode -ne 1) { $headline = 'The installer stopped before it finished. Windows may have blocked it.' }
+      throw "The installer stopped with exit code $($proc.ExitCode)."
+    }
+  } catch {
+    if (Show-BlockedHelp $headline 'the installer' $_.Exception.Message) { return }
+    throw
+  } finally {
+    Remove-Item -Path $file, $sumsFile -Force -ErrorAction SilentlyContinue
+  }
 
   $app = Join-Path $env:LOCALAPPDATA 'Programs\Summoner Select\Summoner Select.exe'
   if (Test-Path -Path $app) {
-    Start-Process -FilePath $app
+    try {
+      Start-Process -FilePath $app
+    } catch {
+      if (Show-BlockedHelp 'Installed, but Windows most likely blocked Summoner Select from starting.' 'Summoner Select' $_.Exception.Message) { return }
+      throw
+    }
     Write-Host '  Installed. Summoner Select is starting.' -ForegroundColor Green
   } else {
     Write-Host '  Installed. Open Summoner Select from the Start menu.' -ForegroundColor Green

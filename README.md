@@ -49,7 +49,7 @@ v0.9.0 and v0.9.1 were built before this was set up, so they can't be checked th
 3. **Play as usual.** Start League; the app follows your lobby and champ select.
 4. **Voice control (optional).** Tap the mic on your phone. The first time, the app shows how to let the phone trust your PC (Settings → Voice), once per phone. The certificate it trusts is made on your PC and never leaves it.
 
-On Windows 11 PCs with **Smart App Control** turned on, unsigned apps are blocked outright. Signed builds come later.
+On Windows 11 PCs with **Smart App Control** turned on, Windows may block the installer or the app, because the builds aren't signed yet. You can wait for the signed build or turn Smart App Control off yourself: [summonerselect.com/blocked](https://summonerselect.com/blocked) explains both.
 
 ## What it connects to
 
